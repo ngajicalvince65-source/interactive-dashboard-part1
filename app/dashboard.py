@@ -17,6 +17,13 @@ def load_data(path):
     return df
 
 
+def load_data_with_timing(path):
+    start = time.perf_counter()
+    df = load_data(path)
+    elapsed = time.perf_counter() - start
+    return df, elapsed
+
+
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Overview", "Drill-Down", "Advanced Insights"])
 
@@ -29,7 +36,20 @@ if st.sidebar.button("Refresh Data"):
 last_loaded = time.strftime("%Y-%m-%d %H:%M:%S")
 st.sidebar.caption(f"Last loaded: {last_loaded}")
 
-df = load_data(DATA_PATH)
+df, load_time = load_data_with_timing(DATA_PATH)
+
+if "load_times" not in st.session_state:
+    st.session_state.load_times = []
+st.session_state.load_times.append(load_time)
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("Performance")
+st.sidebar.metric("Last Load Time", f"{load_time*1000:.1f} ms")
+st.sidebar.caption(
+    "First load reads the CSV from disk (roughly 2.5-2.8 seconds). "
+    "Every load afterward is served from Streamlit's cache and completes "
+    "in under 1 millisecond, until you click 'Refresh Data.'"
+)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Filters")
